@@ -3,6 +3,15 @@ const ctx = canvas.getContext("2d");
 
 const tipEl = document.getElementById("tip");
 
+// Overlay UI
+const overlay = document.getElementById("overlay");
+const resultBadge = document.getElementById("resultBadge");
+const resultTitle = document.getElementById("resultTitle");
+const resultScore = document.getElementById("resultScore");
+const resultStats = document.getElementById("resultStats");
+const btnReplay = document.getElementById("btnReplay");
+const btnExit = document.getElementById("btnExit");
+
 // DPI fix
 const dpr = window.devicePixelRatio || 1;
 const cssW = canvas.width;
@@ -54,6 +63,11 @@ const TIPS = [
 // Ввімкни true, якщо хочеш бачити кола зіткнень під час тесту
 const DEBUG_HITBOX = false;
 
+// intervals (let — щоб можна було перезапускати)
+let loopInterval = null;
+let spawnInterval = null;
+let timerInterval = null;
+
 function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
 
 function roundRect(x, y, w, h, r){
@@ -84,20 +98,82 @@ function updateHud(){
   document.getElementById("time").innerText = time;
 }
 
-function endGame(){
+function showOverlay(type){
+  // type: "win" | "lose"
+  overlay.classList.remove("hidden");
+
+  const isWin = type === "win";
+
+  resultBadge.textContent = isWin ? "🏆" : "😅";
+  resultBadge.style.background = isWin ? "rgba(34,197,94,.14)" : "rgba(239,68,68,.12)";
+  resultBadge.style.color = isWin ? "#15803d" : "#b91c1c";
+
+  resultTitle.textContent = isWin
+    ? "Вітаю! Ти протримався 2 хв ✅"
+    : "Поразка… але ти можеш краще 💪";
+
+  resultScore.textContent = score;
+
+  resultStats.textContent = `Корисного: ${goodCaught}. Шкідливого: ${badCaught}.`;
+}
+
+function stopIntervals(){
+  if (loopInterval) clearInterval(loopInterval);
+  if (spawnInterval) clearInterval(spawnInterval);
+  if (timerInterval) clearInterval(timerInterval);
+  loopInterval = spawnInterval = timerInterval = null;
+}
+
+function endGame(type){
   if (isGameOver) return;
   isGameOver = true;
+  stopIntervals();
+  showOverlay(type);
+}
 
-  clearInterval(loopInterval);
-  clearInterval(timerInterval);
-  clearInterval(spawnInterval);
+function restartGame(){
+  stopIntervals();
 
-  document.getElementById("finalScore").innerText = score;
+  // reset state
+  items = [];
+  score = 0;
+  lives = 3;
+  time = 120;
+  isGameOver = false;
+  goodCaught = 0;
+  badCaught = 0;
 
-  const summary = document.getElementById("summary");
-  summary.textContent = `Корисного: ${goodCaught}. Шкідливого: ${badCaught}.`;
+  // reset UI
+  overlay.classList.add("hidden");
+  setTipRandom();
+  updateHud();
 
-  document.getElementById("end").classList.remove("hidden");
+  // restart intervals
+  loopInterval = setInterval(update, 20);
+  spawnInterval = setInterval(spawnItem, 650);
+  timerInterval = setInterval(() => {
+    if (isGameOver) return;
+    time -= 1;
+    if (time <= 0){
+      time = 0;
+      updateHud();
+      endGame("win");
+    } else {
+      updateHud();
+    }
+  }, 1000);
+}
+
+function exitGame(){
+  // Telegram WebApp close
+  if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.close === "function") {
+    window.Telegram.WebApp.close();
+    return;
+  }
+
+  // Browser fallback
+  try { window.close(); } catch(e) {}
+  try { history.back(); } catch(e) {}
 }
 
 function drawBackground(){
@@ -132,8 +208,7 @@ function spawnItem(){
     ? GOOD[Math.floor(Math.random()*GOOD.length)]
     : BAD[Math.floor(Math.random()*BAD.length)];
 
-  // hitbox radius (невидиме коло)
-  const r = 18;
+  const r = 18; // hitbox radius
 
   items.push({
     x: Math.random() * (cssW - 40) + 20,
@@ -141,36 +216,32 @@ function spawnItem(){
     r,
     v: 2.0 + Math.random()*1.6,
     type: isGood ? "good" : "bad",
-    icon: pick.icon,
-    name: pick.name,
-    tag: pick.tag
+    icon: pick.icon
   });
 }
 
 function drawEmojiItem(it){
-  // “стікер” під емодзі (гарно, але без текстів)
-  // колір рамки підкаже good/bad
   const isGood = it.type === "good";
 
-  // тінь
+  // shadow
   ctx.fillStyle = "rgba(15,23,42,0.06)";
   roundRect(it.x - 24, it.y - 22, 48, 44, 14);
   ctx.fill();
 
-  // обводка
+  // outline
   ctx.strokeStyle = isGood ? "rgba(22,163,74,0.55)" : "rgba(239,68,68,0.55)";
   ctx.lineWidth = 2;
   roundRect(it.x - 24, it.y - 22, 48, 44, 14);
   ctx.stroke();
 
-  // емодзі по центру
+  // emoji center
   ctx.font = "28px serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#0f172a";
   ctx.fillText(it.icon, it.x, it.y);
 
-  // дебаг хітбоксу (за потреби)
+  // debug hitbox
   if (DEBUG_HITBOX) {
     ctx.beginPath();
     ctx.strokeStyle = "rgba(15,23,42,0.35)";
@@ -198,7 +269,6 @@ function update(){
 
     drawEmojiItem(it);
 
-    // колізія: коло (невидиме) проти прямокутника кошика
     const hit = circleRectHit(it.x, it.y, it.r, basket.x, basket.y, basket.w, basket.h);
     if (hit) {
       if (it.type === "good") {
@@ -216,7 +286,7 @@ function update(){
       if (lives <= 0) {
         lives = 0;
         updateHud();
-        endGame();
+        endGame("lose");
         return;
       }
     }
@@ -237,20 +307,9 @@ canvas.addEventListener("touchmove", e => {
   setBasketByClientX(e.touches[0].clientX);
 }, { passive:false });
 
-const loopInterval = setInterval(update, 20);
-const spawnInterval = setInterval(spawnItem, 650);
+// Buttons
+btnReplay.addEventListener("click", restartGame);
+btnExit.addEventListener("click", exitGame);
 
-const timerInterval = setInterval(() => {
-  if (isGameOver) return;
-  time -= 1;
-  if (time <= 0){
-    time = 0;
-    updateHud();
-    endGame();
-  } else {
-    updateHud();
-  }
-}, 1000);
-
-updateHud();
-setTipRandom();
+// Start
+restartGame();
