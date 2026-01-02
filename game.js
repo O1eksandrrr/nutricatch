@@ -148,10 +148,20 @@ function spawnItem(){
 }
 
 function drawEmojiItem(it){
-  // “стікер” під емодзі (щоб виглядало охайно)
+  // “стікер” під емодзі (гарно, але без текстів)
+  // колір рамки підкаже good/bad
+  const isGood = it.type === "good";
+
+  // тінь
   ctx.fillStyle = "rgba(15,23,42,0.06)";
   roundRect(it.x - 24, it.y - 22, 48, 44, 14);
   ctx.fill();
+
+  // обводка
+  ctx.strokeStyle = isGood ? "rgba(22,163,74,0.55)" : "rgba(239,68,68,0.55)";
+  ctx.lineWidth = 2;
+  roundRect(it.x - 24, it.y - 22, 48, 44, 14);
+  ctx.stroke();
 
   // емодзі по центру
   ctx.font = "28px serif";
@@ -160,15 +170,10 @@ function drawEmojiItem(it){
   ctx.fillStyle = "#0f172a";
   ctx.fillText(it.icon, it.x, it.y);
 
-  // маленький нутрі-тег знизу (дуже тонко, не заважає)
-  ctx.font = "10px sans-serif";
-  ctx.fillStyle = "rgba(100,116,139,1)";
-  ctx.fillText(it.tag, it.x, it.y + 26);
-
-  // дебаг хітбоксу
+  // дебаг хітбоксу (за потреби)
   if (DEBUG_HITBOX) {
     ctx.beginPath();
-    ctx.strokeStyle = "rgba(239,68,68,0.55)";
+    ctx.strokeStyle = "rgba(15,23,42,0.35)";
     ctx.lineWidth = 1;
     ctx.arc(it.x, it.y, it.r, 0, Math.PI*2);
     ctx.stroke();
