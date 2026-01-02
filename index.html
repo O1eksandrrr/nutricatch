@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>NutriCatch</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="hud">
+    <span>⏱ <span id="time">120</span>s</span>
+    <span>⭐ <span id="score">0</span></span>
+    <span>❤️ <span id="lives">3</span></span>
+  </div>
+
+  <canvas id="game" width="360" height="600"></canvas>
+
+  <div id="end" class="hidden">
+    <h2>Гру завершено 🎉</h2>
+    <p>Твій рахунок: <span id="finalScore"></span></p>
+    <button onclick="location.reload()">Грати ще раз</button>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
