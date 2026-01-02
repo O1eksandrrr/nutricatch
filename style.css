@@ -1,0 +1,26 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #f6f8f7;
+  text-align: center;
+}
+
+#hud {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+  font-weight: bold;
+}
+
+canvas {
+  background: #ffffff;
+  border-radius: 12px;
+}
+
+.hidden {
+  display: none;
+}
+
+#end {
+  margin-top: 20px;
+}
