@@ -6,22 +6,43 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="hud">
-    <span>⏱ <span id="time">120</span>s</span>
-    <span>⭐ <span id="score">0</span></span>
-    <span>❤️ <span id="lives">3</span></span>
-    <span>🥦 <span id="goodCaught">0</span></span>
-    <span>🍔 <span id="badCaught">0</span></span>
+  <div class="wrap">
+    <div class="brand">
+      <div class="title">
+        <div>
+          <h1>NutriArt • Mini Game</h1>
+          <div class="sub">Поки готується твій план — лови корисне 🥗</div>
+        </div>
+      </div>
+      <div class="badge">План: готується…</div>
+    </div>
+
+    <div class="panel">
+      <div id="hud">
+        <div class="hud-left">
+          <div class="pill">⏱ <strong id="time">120</strong>s</div>
+          <div class="pill">⭐ <strong id="score">0</strong></div>
+        </div>
+        <div class="hud-right">
+          <div class="pill">❤️ <strong id="lives">3</strong></div>
+        </div>
+      </div>
+
+      <canvas id="game" width="360" height="560"></canvas>
+
+      <div class="tip" id="tip">
+        Порада: білок + клітковина = ситість надовше ✅
+      </div>
+    </div>
+
+    <div id="end" class="hidden">
+      <h2>Готово ✅</h2>
+      <p>Твій рахунок: <strong id="finalScore"></strong></p>
+      <p id="summary"></p>
+      <button onclick="location.reload()">Зіграю ще раз</button>
+    </div>
+
+    <script src="game.js"></script>
   </div>
-
-  <canvas id="game" width="360" height="600"></canvas>
-
-  <div id="end" class="hidden">
-    <h2>Гру завершено 🎉</h2>
-    <p>Твій рахунок: <span id="finalScore"></span></p>
-    <button onclick="location.reload()">Грати ще раз</button>
-  </div>
-
-  <script src="game.js"></script>
 </body>
 </html>
