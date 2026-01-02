@@ -25,22 +25,22 @@ let goodCaught = 0;
 let badCaught = 0;
 
 const GOOD = [
-  { name: "Asparagus", tag:"Fiber" },
-  { name: "Avocado", tag:"Healthy fats" },
-  { name: "Chicken", tag:"Protein" },
-  { name: "Cabbage", tag:"Vitamins" },
-  { name: "Oats", tag:"Slow carbs" },
-  { name: "Greek yogurt", tag:"Protein" },
-  { name: "Salmon", tag:"Omega-3" },
-  { name: "Berries", tag:"Antioxidants" },
+  { icon: "🥦", name: "Broccoli", tag: "Fiber" },
+  { icon: "🥑", name: "Avocado", tag: "Healthy fats" },
+  { icon: "🍗", name: "Chicken", tag: "Protein" },
+  { icon: "🥬", name: "Greens", tag: "Micros" },
+  { icon: "🍎", name: "Apple", tag: "Fiber" },
+  { icon: "🫐", name: "Berries", tag: "Antioxidants" },
+  { icon: "🥣", name: "Oats", tag: "Slow carbs" },
+  { icon: "🐟", name: "Fish", tag: "Omega-3" },
 ];
 
 const BAD = [
-  { name: "Burger", tag:"Ultra-processed" },
-  { name: "Fries", tag:"Fried" },
-  { name: "Soda", tag:"Sugar" },
-  { name: "Donut", tag:"Sugar" },
-  { name: "Chips", tag:"Salt+fat" },
+  { icon: "🍔", name: "Burger", tag: "Ultra-processed" },
+  { icon: "🍟", name: "Fries", tag: "Fried" },
+  { icon: "🥤", name: "Soda", tag: "Sugar" },
+  { icon: "🍩", name: "Donut", tag: "Sugar" },
+  { icon: "🍿", name: "Snacks", tag: "Salt+fat" },
 ];
 
 const TIPS = [
@@ -50,6 +50,9 @@ const TIPS = [
   "Порада: сон впливає на тягу до солодкого 😴",
   "Порада: 80/20 — нормально. Ідеальність не потрібна 🙂"
 ];
+
+// Ввімкни true, якщо хочеш бачити кола зіткнень під час тесту
+const DEBUG_HITBOX = false;
 
 function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
 
@@ -63,31 +66,12 @@ function roundRect(x, y, w, h, r){
   ctx.closePath();
 }
 
-function spawnItem(){
-  if (isGameOver) return;
-
-  // 72% good, 28% bad — щоб це було приємно
-  const isGood = Math.random() < 0.72;
-  const pick = isGood
-    ? GOOD[Math.floor(Math.random()*GOOD.length)]
-    : BAD[Math.floor(Math.random()*BAD.length)];
-
-  const w = 132;
-  const h = 44;
-
-  items.push({
-    x: Math.random() * (cssW - w - 16) + 8,
-    y: -h,
-    w, h,
-    v: 1.9 + Math.random()*1.6,
-    type: isGood ? "good" : "bad",
-    name: pick.name,
-    tag: pick.tag
-  });
-}
-
-function rectHit(ax, ay, aw, ah, bx, by, bw, bh){
-  return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+function circleRectHit(cx, cy, r, rx, ry, rw, rh) {
+  const nx = clamp(cx, rx, rx + rw);
+  const ny = clamp(cy, ry, ry + rh);
+  const dx = cx - nx;
+  const dy = cy - ny;
+  return (dx*dx + dy*dy) <= r*r;
 }
 
 function setTipRandom(){
@@ -111,13 +95,12 @@ function endGame(){
   document.getElementById("finalScore").innerText = score;
 
   const summary = document.getElementById("summary");
-  summary.textContent = `Ти зловив корисного: ${goodCaught}. Пропустив/зловив шкідливого: ${badCaught}.`;
+  summary.textContent = `Корисного: ${goodCaught}. Шкідливого: ${badCaught}.`;
 
   document.getElementById("end").classList.remove("hidden");
 }
 
 function drawBackground(){
-  // легкі “бульбашки” як мікро-вайб здоровʼя
   for(let i=0;i<10;i++){
     const x = (i*37 + (time*3)%cssW);
     const y = (i*53 + (time*2)%cssH);
@@ -129,7 +112,6 @@ function drawBackground(){
 }
 
 function drawBasket(){
-  // “тарілка” (мінімалістично)
   ctx.fillStyle = "#0f172a";
   roundRect(basket.x, basket.y, basket.w, basket.h, 12);
   ctx.fill();
@@ -141,38 +123,56 @@ function drawBasket(){
   ctx.fillText("PLATE", basket.x + basket.w/2, basket.y + basket.h/2);
 }
 
-function drawItem(it){
-  // тінь
-  ctx.fillStyle = "rgba(15,23,42,0.08)";
-  roundRect(it.x+2, it.y+3, it.w, it.h, 12);
+function spawnItem(){
+  if (isGameOver) return;
+
+  // 72% good, 28% bad
+  const isGood = Math.random() < 0.72;
+  const pick = isGood
+    ? GOOD[Math.floor(Math.random()*GOOD.length)]
+    : BAD[Math.floor(Math.random()*BAD.length)];
+
+  // hitbox radius (невидиме коло)
+  const r = 18;
+
+  items.push({
+    x: Math.random() * (cssW - 40) + 20,
+    y: -30,
+    r,
+    v: 2.0 + Math.random()*1.6,
+    type: isGood ? "good" : "bad",
+    icon: pick.icon,
+    name: pick.name,
+    tag: pick.tag
+  });
+}
+
+function drawEmojiItem(it){
+  // “стікер” під емодзі (щоб виглядало охайно)
+  ctx.fillStyle = "rgba(15,23,42,0.06)";
+  roundRect(it.x - 24, it.y - 22, 48, 44, 14);
   ctx.fill();
 
-  // картка
-  const isGood = it.type === "good";
-  ctx.fillStyle = isGood ? "rgba(22,163,74,0.12)" : "rgba(239,68,68,0.12)";
-  ctx.strokeStyle = isGood ? "rgba(22,163,74,0.35)" : "rgba(239,68,68,0.35)";
-  ctx.lineWidth = 1;
-
-  roundRect(it.x, it.y, it.w, it.h, 12);
-  ctx.fill();
-  ctx.stroke();
-
-  // маркер
-  ctx.fillStyle = isGood ? "#16a34a" : "#ef4444";
-  ctx.beginPath();
-  ctx.arc(it.x+16, it.y+it.h/2, 6, 0, Math.PI*2);
-  ctx.fill();
-
-  // текст
+  // емодзі по центру
+  ctx.font = "28px serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
   ctx.fillStyle = "#0f172a";
-  ctx.font = "12px sans-serif";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillText(it.name, it.x+30, it.y+20);
+  ctx.fillText(it.icon, it.x, it.y);
 
-  ctx.fillStyle = "rgba(100,116,139,1)";
+  // маленький нутрі-тег знизу (дуже тонко, не заважає)
   ctx.font = "10px sans-serif";
-  ctx.fillText(it.tag, it.x+30, it.y+35);
+  ctx.fillStyle = "rgba(100,116,139,1)";
+  ctx.fillText(it.tag, it.x, it.y + 26);
+
+  // дебаг хітбоксу
+  if (DEBUG_HITBOX) {
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(239,68,68,0.55)";
+    ctx.lineWidth = 1;
+    ctx.arc(it.x, it.y, it.r, 0, Math.PI*2);
+    ctx.stroke();
+  }
 }
 
 function update(){
@@ -186,16 +186,16 @@ function update(){
     const it = items[i];
     it.y += it.v;
 
-    // нижче екрану — прибираємо
-    if (it.y > cssH + 60) {
+    if (it.y - it.r > cssH + 40) {
       items.splice(i, 1);
       continue;
     }
 
-    drawItem(it);
+    drawEmojiItem(it);
 
-    // collision
-    if (rectHit(it.x, it.y, it.w, it.h, basket.x, basket.y, basket.w, basket.h)) {
+    // колізія: коло (невидиме) проти прямокутника кошика
+    const hit = circleRectHit(it.x, it.y, it.r, basket.x, basket.y, basket.w, basket.h);
+    if (hit) {
       if (it.type === "good") {
         score += 1;
         goodCaught += 1;
@@ -226,14 +226,12 @@ function setBasketByClientX(clientX){
   basket.x = clamp(x - basket.w/2, 0, cssW - basket.w);
 }
 
-// mouse/touch
 canvas.addEventListener("mousemove", e => setBasketByClientX(e.clientX));
 canvas.addEventListener("touchmove", e => {
   e.preventDefault();
   setBasketByClientX(e.touches[0].clientX);
 }, { passive:false });
 
-// intervals
 const loopInterval = setInterval(update, 20);
 const spawnInterval = setInterval(spawnItem, 650);
 
