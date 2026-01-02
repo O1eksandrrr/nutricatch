@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>NutriCatch</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <div class="wrap">
     <div class="brand">
@@ -30,16 +32,25 @@
 
       <canvas id="game" width="360" height="560"></canvas>
 
+      <!-- RESULT OVERLAY (WIN/LOSE) -->
+      <div id="overlay" class="overlay hidden" role="dialog" aria-modal="true">
+        <div class="modal">
+          <div class="modal-badge" id="resultBadge">🏆</div>
+          <h2 id="resultTitle">Вітаю!</h2>
+
+          <p id="resultText">Твій рахунок: <strong id="resultScore">0</strong></p>
+          <p class="muted" id="resultStats"></p>
+
+          <div class="modal-actions">
+            <button class="btn-secondary" id="btnReplay" type="button">Зіграти ще раз</button>
+            <button class="btn-primary" id="btnExit" type="button">Вийти з гри</button>
+          </div>
+        </div>
+      </div>
+
       <div class="tip" id="tip">
         Порада: білок + клітковина = ситість надовше ✅
       </div>
-    </div>
-
-    <div id="end" class="hidden">
-      <h2>Готово ✅</h2>
-      <p>Твій рахунок: <strong id="finalScore"></strong></p>
-      <p id="summary"></p>
-      <button onclick="location.reload()">Зіграю ще раз</button>
     </div>
 
     <script src="game.js"></script>
